@@ -56,13 +56,17 @@ on_train = pd.read_csv('data/ccf_online_stage1_train.csv',header=None)
 on_train.columns = ['user_id','merchant_id','action','coupon_id','discount_rate','date_received','date']
 
 
-dataset3 = off_test
+dataset3 = off_test 
 feature3 = off_train[((off_train.date>='20160315')&(off_train.date<='20160630'))|((off_train.date=='null')&(off_train.date_received>='20160315')&(off_train.date_received<='20160630'))]
+# 在 0315~0630 时间段有消费的(正常消费或者用券)或者在 0315~0630 时间段拿了券没有消费的
 dataset2 = off_train[(off_train.date_received>='20160515')&(off_train.date_received<='20160615')]
+# 在 0515~0615 时间段拿了券的
 feature2 = off_train[(off_train.date>='20160201')&(off_train.date<='20160514')|((off_train.date=='null')&(off_train.date_received>='20160201')&(off_train.date_received<='20160514'))]
+# 在 0210~0514 时间段有消费的(正常消费或者用券)或者在 0210~0514 时间段拿了券没有消费的
 dataset1 = off_train[(off_train.date_received>='20160414')&(off_train.date_received<='20160514')]
+# 在 0414~0514 时间段拿了券的
 feature1 = off_train[(off_train.date>='20160101')&(off_train.date<='20160413')|((off_train.date=='null')&(off_train.date_received>='20160101')&(off_train.date_received<='20160413'))]
-
+# 在 0101~0413 时间段有消费的(正常消费或者用券)或者在 0101~0413 时间段拿了券没有消费的
 
 ############# other feature ##################3
 """
@@ -78,6 +82,7 @@ feature1 = off_train[(off_train.date>='20160101')&(off_train.date<='20160413')|(
 
 #for dataset3
 t = dataset3[['user_id']]
+# 第一列
 t['this_month_user_receive_all_coupon_count'] = 1
 t = t.groupby('user_id').agg('sum').reset_index()
 
