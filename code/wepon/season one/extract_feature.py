@@ -58,7 +58,7 @@ on_train.columns = ['user_id','merchant_id','action','coupon_id','discount_rate'
 
 dataset3 = off_test 
 feature3 = off_train[((off_train.date>='20160315')&(off_train.date<='20160630'))|((off_train.date=='null')&(off_train.date_received>='20160315')&(off_train.date_received<='20160630'))]
-# 在 0315~0630 时间段有消费的(正常消费或者用券)或者在 0315~0630 时间段拿了券没有消费的
+# 在 0315~0630 时间段有消费的(正常消费或者用券)或者在 0315~0630 时间段拿了券没有消费的 (选出满足这些条件的行，但是每行的index保持不变)
 dataset2 = off_train[(off_train.date_received>='20160515')&(off_train.date_received<='20160615')]
 # 在 0515~0615 时间段拿了券的
 feature2 = off_train[(off_train.date>='20160201')&(off_train.date<='20160514')|((off_train.date=='null')&(off_train.date_received>='20160201')&(off_train.date_received<='20160514'))]
@@ -80,29 +80,88 @@ feature1 = off_train[(off_train.date>='20160101')&(off_train.date<='20160413')|(
       day_gap_before, day_gap_after  (receive the same coupon)
 """
 
-#for dataset3
+#for dataset3， test data
 t = dataset3[['user_id']]
-# 第一列
+# 取出第一列，保持原来的维度形状，（行数，1），依然有0，1，2，3。。。的index 
 t['this_month_user_receive_all_coupon_count'] = 1
+# 加一列
 t = t.groupby('user_id').agg('sum').reset_index()
+"""
+找出每个人领取优惠券的个数,并且index重置为0，1，2，3。。。比如：
+   user_id  this_month_user_receive_all_coupon_count
+0  1        1
+1  2        3
+2  3        2
+"""
 
 t1 = dataset3[['user_id','coupon_id']]
 t1['this_month_user_receive_same_coupon_count'] = 1
 t1 = t1.groupby(['user_id','coupon_id']).agg('sum').reset_index()
 
 t2 = dataset3[['user_id','coupon_id','date_received']]
+"""
+   uer_id  coupon_id  date_received
+0  2       5          1
+1  2       6          2
+2  2       5          2
+3  1       6          3
+4  3       5          4
+5  3       5          2
+6  3       5          2
+"""
 t2.date_received = t2.date_received.astype('str')
 t2 = t2.groupby(['user_id','coupon_id'])['date_received'].agg(lambda x:':'.join(x)).reset_index()
+# 和上面的groupby一样，只不过将其转化为字符串并且用：连接起来
+"""
+   user_id  coupon_id      date_received
+0  1        6              3
+1  2        5              1:2
+2  2        6              2
+3  3        5              4:2:2
+"""
 t2['receive_number'] = t2.date_received.apply(lambda s:len(s.split(':')))
+"""
+   user_id  coupon_id      date_received  receive_number
+0  1        6              3              1
+1  2        5              1:2            2
+2  2        6              2              1
+3  3        5              4:2:2          3
+"""
 t2 = t2[t2.receive_number>1]
-t2['max_date_received'] = t2.date_received.apply(lambda s:max([int(d) for d in s.split(':')]))
+"""
+   user_id  coupon_id      date_received  receive_number
+1  2        5              1:2            2
+3  3        5              4:2:2          3
+"""
+t2['max_date_received'] = t2.date_received.apply(lambda s:max([int(d) for d in s.split(':')])) #收到优惠券日期中的最大值
 t2['min_date_received'] = t2.date_received.apply(lambda s:min([int(d) for d in s.split(':')]))
+"""
+   user_id  coupon_id      date_received  receive_number  max_date_received  min_date_received
+1  2        5              1:2            2               2                  1
+3  3        5              4:2:2          3               4                  2
+"""
 t2 = t2[['user_id','coupon_id','max_date_received','min_date_received']]
-
+"""
+   user_id  coupon_id      max_date_received  min_date_received
+1  2        5              2                  1
+3  3        5              4                  2
+"""
 t3 = dataset3[['user_id','coupon_id','date_received']]
-t3 = pd.merge(t3,t2,on=['user_id','coupon_id'],how='left')
-t3['this_month_user_receive_same_coupon_lastone'] = t3.max_date_received - t3.date_received
+"""
+   uer_id  coupon_id  date_received
+0  2       5          1
+1  2       6          2
+2  2       5          2
+3  1       6          3
+4  3       5          4
+5  3       5          2
+6  3       5          2
+"""
+t3 = pd.merge(t3,t2,on=['user_id','coupon_id'],how='left') #左联合并
+t3['this_month_user_receive_same_coupon_lastone'] = t3.max_date_received - t3.date_received 
+#每个优惠券收到的日期到最晚收到优惠券的日期的距离
 t3['this_month_user_receive_same_coupon_firstone'] = t3.date_received - t3.min_date_received
+#每个优惠券收到的日期到最早收到优惠券的日期的距离
 def is_firstlastone(x):
     if x==0:
         return 1
