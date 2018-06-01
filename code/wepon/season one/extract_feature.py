@@ -231,7 +231,9 @@ print other_feature3.shape
 
 
 
-#for dataset2
+# for dataset2
+# dataset2 = off_train[(off_train.date_received>='20160515')&(off_train.date_received<='20160615')]
+# 在 0515~0615 时间段拿了券的
 t = dataset2[['user_id']]
 t['this_month_user_receive_all_coupon_count'] = 1
 t = t.groupby('user_id').agg('sum').reset_index()
@@ -323,6 +325,8 @@ print other_feature2.shape
 
 
 #for dataset1
+# dataset1 = off_train[(off_train.date_received>='20160414')&(off_train.date_received<='20160514')]
+# 在 0414~0514 时间段拿了券的
 t = dataset1[['user_id']]
 t['this_month_user_receive_all_coupon_count'] = 1
 t = t.groupby('user_id').agg('sum').reset_index()
