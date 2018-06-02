@@ -688,6 +688,7 @@ merchant1_feature.to_csv('data/merchant1_feature.csv',index=None)
 def get_user_date_datereceived_gap(s):
     s = s.split(':')
     return (date(int(s[0][0:4]),int(s[0][4:6]),int(s[0][6:8])) - date(int(s[1][0:4]),int(s[1][4:6]),int(s[1][6:8]))).days
+  # 返回相差多少天
 
 #for dataset3
 user3 = feature3[['user_id','merchant_id','coupon_id','discount_rate','distance','date_received','date']]
@@ -1086,7 +1087,17 @@ dataset3.user_merchant_any = dataset3.user_merchant_any.replace(np.nan,0)
 dataset3.user_merchant_received = dataset3.user_merchant_received.replace(np.nan,0)
 dataset3['is_weekend'] = dataset3.day_of_week.apply(lambda x:1 if x in (6,7) else 0)
 weekday_dummies = pd.get_dummies(dataset3.day_of_week)
+"""
+s = pd.Series(list('abca'))
+pd.get_dummies(s)
+   a  b  c
+0  1  0  0
+1  0  1  0
+2  0  0  1
+3  1  0  0
+"""
 weekday_dummies.columns = ['weekday'+str(i+1) for i in range(weekday_dummies.shape[1])]
+# 应该是[weekday1, weekday2, weekday3, weekday4, weekday5, weekday6, weekday7]， 这成为weekday_dummies的列标签
 dataset3 = pd.concat([dataset3,weekday_dummies],axis=1)
 dataset3.drop(['merchant_id','day_of_week','coupon_count'],axis=1,inplace=True)
 dataset3 = dataset3.replace('null',np.nan)
