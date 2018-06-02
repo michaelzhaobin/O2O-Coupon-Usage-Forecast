@@ -57,8 +57,10 @@ on_train.columns = ['user_id','merchant_id','action','coupon_id','discount_rate'
 
 
 dataset3 = off_test 
+# 在 七月份 时间段拿了券的
 feature3 = off_train[((off_train.date>='20160315')&(off_train.date<='20160630'))|((off_train.date=='null')&(off_train.date_received>='20160315')&(off_train.date_received<='20160630'))]
 # 在 0315~0630 时间段有消费的(正常消费或者用券)或者在 0315~0630 时间段拿了券没有消费的 (选出满足这些条件的行，但是每行的index保持不变)
+# 就是去取出在时间段内的所有有用的行
 dataset2 = off_train[(off_train.date_received>='20160515')&(off_train.date_received<='20160615')]
 # 在 0515~0615 时间段拿了券的
 feature2 = off_train[(off_train.date>='20160201')&(off_train.date<='20160514')|((off_train.date=='null')&(off_train.date_received>='20160201')&(off_train.date_received<='20160514'))]
@@ -70,13 +72,14 @@ feature1 = off_train[(off_train.date>='20160101')&(off_train.date<='20160413')|(
 
 ############# other feature ##################3
 """
+在 某个时间段（一个月）时间段拿了优惠券的
 5. other feature:
-      this_month_user_receive_all_coupon_count
-      this_month_user_receive_same_coupon_count
-      this_month_user_receive_same_coupon_lastone
-      this_month_user_receive_same_coupon_firstone
-      this_day_user_receive_all_coupon_count
-      this_day_user_receive_same_coupon_count
+      this_month_user_receive_all_coupon_count （每个人领取优惠券的个数： user_id）
+      this_month_user_receive_same_coupon_count （每个人领取每个优惠券的个数: user_id, coupon_id）
+      this_month_user_receive_same_coupon_lastone  （每个人领取的优惠券中是否是最晚的那个）
+      this_month_user_receive_same_coupon_firstone  （每个人领取的优惠券中是否是最早的那个）
+      this_day_user_receive_all_coupon_count  （一天中每个人收到的优惠券个数： 'user_id','date_received'）
+      this_day_user_receive_same_coupon_count  (一天中每个人收到的每个优惠券个数: 'user_id','coupon_id','date_received')
       day_gap_before, day_gap_after  (receive the same coupon)
 """
 
@@ -87,7 +90,7 @@ t['this_month_user_receive_all_coupon_count'] = 1
 # 加一列
 t = t.groupby('user_id').agg('sum').reset_index()
 """
-找出每个人领取优惠券的个数,并且index重置为0，1，2，3。。。比如：
+找出这个月每个人领取优惠券的个数,并且index重置为0，1，2，3。。。比如：
    user_id  this_month_user_receive_all_coupon_count
 0  1        1
 1  2        3
@@ -1076,6 +1079,7 @@ user3 = pd.read_csv('data/user3_feature.csv')
 user_merchant3 = pd.read_csv('data/user_merchant3.csv')
 other_feature3 = pd.read_csv('data/other_feature3.csv')
 dataset3 = pd.merge(coupon3,merchant3,on='merchant_id',how='left')
+# coupon3具有原先的尺寸
 dataset3 = pd.merge(dataset3,user3,on='user_id',how='left')
 dataset3 = pd.merge(dataset3,user_merchant3,on=['user_id','merchant_id'],how='left')
 dataset3 = pd.merge(dataset3,other_feature3,on=['user_id','coupon_id','date_received'],how='left')
