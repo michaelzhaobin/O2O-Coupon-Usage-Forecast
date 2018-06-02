@@ -1,3 +1,6 @@
+# dateset1和dateset2形成dateset12上下联接起来训练，并去除了'user_id','label','day_gap_before','day_gap_after'列， 
+# 其label在dateset12.label中
+# dateset3进行测试，并去除了'user_id','coupon_id','date_received','day_gap_before','day_gap_after'列
 import pandas as pd
 import xgboost as xgb
 from sklearn.preprocessing import MinMaxScaler
@@ -56,7 +59,27 @@ model = xgb.train(params,dataset12,num_boost_round=3500,evals=watchlist)
 #predict test set
 dataset3_preds['label'] = model.predict(dataset3)
 dataset3_preds.label = MinMaxScaler().fit_transform(dataset3_preds.label.reshape(-1, 1))
+# 压缩到[0, 1]之间
 dataset3_preds.sort_values(by=['coupon_id','label'],inplace=True)
+"""
+df
+    col1 col2 col3
+0   A    2    0
+1   A    1    1
+2   B    9    9
+3   NaN  8    4
+4   D    7    2
+5   C    4    3
+
+df.sort_values(by=['col1', 'col2'])
+    col1 col2 col3
+1   A    1    1
+0   A    2    0
+2   B    9    9
+5   C    4    3
+4   D    7    2
+3   NaN  8    4
+"""
 dataset3_preds.to_csv("xgb_preds.csv",index=None,header=None)
 print dataset3_preds.describe()
     
