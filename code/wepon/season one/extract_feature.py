@@ -1099,7 +1099,9 @@ pd.get_dummies(s)
 weekday_dummies.columns = ['weekday'+str(i+1) for i in range(weekday_dummies.shape[1])]
 # 应该是[weekday1, weekday2, weekday3, weekday4, weekday5, weekday6, weekday7]， 这成为weekday_dummies的列标签
 dataset3 = pd.concat([dataset3,weekday_dummies],axis=1)
+# 横着拼接
 dataset3.drop(['merchant_id','day_of_week','coupon_count'],axis=1,inplace=True)
+# 删除
 dataset3 = dataset3.replace('null',np.nan)
 dataset3.to_csv('data/dataset3.csv',index=None)
 
