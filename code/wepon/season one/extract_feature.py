@@ -460,18 +460,27 @@ def is_man_jian(s):
 
 #dataset3
 dataset3['day_of_week'] = dataset3.date_received.astype('str').apply(lambda x:date(int(x[0:4]),int(x[4:6]),int(x[6:8])).weekday()+1)
+# data_received 这一天是周几（1～7）
 dataset3['day_of_month'] = dataset3.date_received.astype('str').apply(lambda x:int(x[6:8]))
+# 一个月的几号
 dataset3['days_distance'] = dataset3.date_received.astype('str').apply(lambda x:(date(int(x[0:4]),int(x[4:6]),int(x[6:8]))-date(2016,6,30)).days)
+# 这一天距离6月30号有多少天
 dataset3['discount_man'] = dataset3.discount_rate.apply(get_discount_man)
+# 满多少
 dataset3['discount_jian'] = dataset3.discount_rate.apply(get_discount_jian)
+# 减多少
 dataset3['is_man_jian'] = dataset3.discount_rate.apply(is_man_jian)
+# 如果是满多少减多少的形式，就返回1，否则返回0
 dataset3['discount_rate'] = dataset3.discount_rate.apply(calc_discount_rate)
+# 折扣率
 d = dataset3[['coupon_id']]
 d['coupon_count'] = 1
 d = d.groupby('coupon_id').agg('sum').reset_index()
+# 每个coupon_id的个数
 dataset3 = pd.merge(dataset3,d,on='coupon_id',how='left')
 dataset3.to_csv('data/coupon3_feature.csv',index=None)
 #dataset2
+# 在 0515~0615 时间段拿了券的
 dataset2['day_of_week'] = dataset2.date_received.astype('str').apply(lambda x:date(int(x[0:4]),int(x[4:6]),int(x[6:8])).weekday()+1)
 dataset2['day_of_month'] = dataset2.date_received.astype('str').apply(lambda x:int(x[6:8]))
 dataset2['days_distance'] = dataset2.date_received.astype('str').apply(lambda x:(date(int(x[0:4]),int(x[4:6]),int(x[6:8]))-date(2016,5,14)).days)
@@ -485,6 +494,7 @@ d = d.groupby('coupon_id').agg('sum').reset_index()
 dataset2 = pd.merge(dataset2,d,on='coupon_id',how='left')
 dataset2.to_csv('data/coupon2_feature.csv',index=None)
 #dataset1
+# 在 0414~0514 时间段拿了券的
 dataset1['day_of_week'] = dataset1.date_received.astype('str').apply(lambda x:date(int(x[0:4]),int(x[4:6]),int(x[6:8])).weekday()+1)
 dataset1['day_of_month'] = dataset1.date_received.astype('str').apply(lambda x:int(x[6:8]))
 dataset1['days_distance'] = dataset1.date_received.astype('str').apply(lambda x:(date(int(x[0:4]),int(x[4:6]),int(x[6:8]))-date(2016,4,13)).days)
@@ -510,15 +520,21 @@ dataset1.to_csv('data/coupon1_feature.csv',index=None)
 
 """
 
-#for dataset3
+#for dataset3 (test data)
 merchant3 = feature3[['merchant_id','coupon_id','distance','date_received','date']]
+# feature3 = off_train[((off_train.date>='20160315')&(off_train.date<='20160630'))|((off_train.date=='null')&(off_train.date_received>='20160315')&(off_train.date_received<='20160630'))]
+# 在 0315~0630 时间段有消费的(正常消费或者用券)或者在 0315~0630 时间段拿了券没有消费的 (选出满足这些条件的行，但是每行的index保持不变)
 
 t = merchant3[['merchant_id']]
 t.drop_duplicates(inplace=True)
+# 去除重复的行，保留first的行
 
 t1 = merchant3[merchant3.date!='null'][['merchant_id']]
+# merchant3[merchant3.date!='null']: 只保留满足条件的行
+# merchant3[merchant3.date!='null'][['merchant_id']] : 只保留‘merchant_id’列
 t1['total_sales'] = 1
 t1 = t1.groupby('merchant_id').agg('sum').reset_index()
+# 每个，merchant多少优惠券
 
 t2 = merchant3[(merchant3.date!='null')&(merchant3.coupon_id!='null')][['merchant_id']]
 t2['sales_use_coupon'] = 1
@@ -675,6 +691,7 @@ def get_user_date_datereceived_gap(s):
 
 #for dataset3
 user3 = feature3[['user_id','merchant_id','coupon_id','discount_rate','distance','date_received','date']]
+# 在 0315~0630 时间段有消费的(正常消费或者用券)或者在 0315~0630 时间段拿了券没有消费的 (选出满足这些条件的行，但是每行的index保持不变)
 
 t = user3[['user_id']]
 t.drop_duplicates(inplace=True)
