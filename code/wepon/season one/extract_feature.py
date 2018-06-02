@@ -1154,5 +1154,9 @@ dataset1 = pd.concat([dataset1,weekday_dummies],axis=1)
 dataset1['label'] = dataset1.date.astype('str') + ':' +  dataset1.date_received.astype('str')
 dataset1.label = dataset1.label.apply(get_label)
 dataset1.drop(['merchant_id','day_of_week','date','date_received','coupon_id','coupon_count'],axis=1,inplace=True)
+
+# dateset1和dateset2形成dateset12上下联接起来训练，并去除了'user_id','label','day_gap_before','day_gap_after'列， 
+# 其label在dateset12.label中
+# dateset3进行测试，并去除了'user_id','coupon_id','date_received','day_gap_before','day_gap_after'列
 dataset1 = dataset1.replace('null',np.nan)
 dataset1.to_csv('data/dataset1.csv',index=None)
