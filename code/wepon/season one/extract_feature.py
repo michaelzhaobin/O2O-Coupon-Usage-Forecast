@@ -57,7 +57,7 @@ on_train.columns = ['user_id','merchant_id','action','coupon_id','discount_rate'
 
 
 dataset3 = off_test 
-# 在 七月份 时间段拿了券的
+# 在 七月份 时间段拿了券的（测试及都是）
 feature3 = off_train[((off_train.date>='20160315')&(off_train.date<='20160630'))|((off_train.date=='null')&(off_train.date_received>='20160315')&(off_train.date_received<='20160630'))]
 # 在 0315~0630 时间段有消费的(正常消费或者用券)或者在 0315~0630 时间段拿了券没有消费的 (选出满足这些条件的行，但是每行的index保持不变)
 # 就是去取出在时间段内的所有有用的行
@@ -427,7 +427,8 @@ print other_feature1.shape
 """
 2.coupon related: 
       discount_rate. discount_man. discount_jian. is_man_jian
-      day_of_week,day_of_month. (date_received)
+      day_of_week,day_of_month. (date_received) 
+      每个优惠券的个数
 """
 def calc_discount_rate(s):
     s =str(s)
@@ -533,7 +534,7 @@ t.drop_duplicates(inplace=True)
 # 去除重复的行，保留first的行
 
 t1 = merchant3[merchant3.date!='null'][['merchant_id']]
-# merchant3[merchant3.date!='null']: 只保留满足条件的行
+# merchant3[merchant3.date!='null']: 只保留有所消费的人的行
 # merchant3[merchant3.date!='null'][['merchant_id']] : 只保留‘merchant_id’列
 t1['total_sales'] = 1
 t1 = t1.groupby('merchant_id').agg('sum').reset_index()
