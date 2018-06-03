@@ -56,6 +56,10 @@ on_train = pd.read_csv('data/ccf_online_stage1_train.csv',header=None)
 on_train.columns = ['user_id','merchant_id','action','coupon_id','discount_rate','date_received','date']
 
 
+"""
+需要从当前小区间（比如0414~0514）提取一部分当前特征，也需要从之前的大区间（0101~0413）提取一部分固有特征
+训练集的label是0414～0514区间中拿到优惠券的用户子在15天中是否将优惠券用出
+"""
 dataset3 = off_test 
 # 在 七月份 时间段拿了券的（测试及都是）
 feature3 = off_train[((off_train.date>='20160315')&(off_train.date<='20160630'))|((off_train.date=='null')&(off_train.date_received>='20160315')&(off_train.date_received<='20160630'))]
@@ -528,6 +532,7 @@ dataset1.to_csv('data/coupon1_feature.csv',index=None)
 merchant3 = feature3[['merchant_id','coupon_id','distance','date_received','date']]
 # feature3 = off_train[((off_train.date>='20160315')&(off_train.date<='20160630'))|((off_train.date=='null')&(off_train.date_received>='20160315')&(off_train.date_received<='20160630'))]
 # 在 0315~0630 时间段有消费的(正常消费或者用券)或者在 0315~0630 时间段拿了券没有消费的 (选出满足这些条件的行，但是每行的index保持不变)
+# 求商户的特征要在更长的之前的时间段中来求！！！！！！！！！！！！！！！！！！！！！！！
 
 t = merchant3[['merchant_id']]
 t.drop_duplicates(inplace=True)
@@ -538,28 +543,34 @@ t1 = merchant3[merchant3.date!='null'][['merchant_id']]
 # merchant3[merchant3.date!='null'][['merchant_id']] : 只保留‘merchant_id’列
 t1['total_sales'] = 1
 t1 = t1.groupby('merchant_id').agg('sum').reset_index()
-# 每个，merchant多少优惠券
+# 每个，merchant有多少人来消费
 
 t2 = merchant3[(merchant3.date!='null')&(merchant3.coupon_id!='null')][['merchant_id']]
 t2['sales_use_coupon'] = 1
 t2 = t2.groupby('merchant_id').agg('sum').reset_index()
+#每个merchant用优惠券消费的人数
 
 t3 = merchant3[merchant3.coupon_id!='null'][['merchant_id']]
 t3['total_coupon'] = 1
 t3 = t3.groupby('merchant_id').agg('sum').reset_index()
+# 每个merchant发出的优惠券数目
 
 t4 = merchant3[(merchant3.date!='null')&(merchant3.coupon_id!='null')][['merchant_id','distance']]
 t4.replace('null',-1,inplace=True)
 t4.distance = t4.distance.astype('int')
 t4.replace(-1,np.nan,inplace=True)
+# merchant distance
 t5 = t4.groupby('merchant_id').agg('min').reset_index()
 t5.rename(columns={'distance':'merchant_min_distance'},inplace=True)
+# 商户最小距离
 
 t6 = t4.groupby('merchant_id').agg('max').reset_index()
 t6.rename(columns={'distance':'merchant_max_distance'},inplace=True)
+# 商户最大距离
 
 t7 = t4.groupby('merchant_id').agg('mean').reset_index()
 t7.rename(columns={'distance':'merchant_mean_distance'},inplace=True)
+#商户平均距离
 
 t8 = t4.groupby('merchant_id').agg('median').reset_index()
 t8.rename(columns={'distance':'merchant_median_distance'},inplace=True)
@@ -573,7 +584,9 @@ merchant3_feature = pd.merge(merchant3_feature,t7,on='merchant_id',how='left')
 merchant3_feature = pd.merge(merchant3_feature,t8,on='merchant_id',how='left')
 merchant3_feature.sales_use_coupon = merchant3_feature.sales_use_coupon.replace(np.nan,0) #fillna with 0
 merchant3_feature['merchant_coupon_transfer_rate'] = merchant3_feature.sales_use_coupon.astype('float') / merchant3_feature.total_coupon
+# 来商户的人中用优惠券消费占发出优惠券数目的比例
 merchant3_feature['coupon_rate'] = merchant3_feature.sales_use_coupon.astype('float') / merchant3_feature.total_sales
+# 来商户的人中用优惠券消费占来消费人数的比例
 merchant3_feature.total_coupon = merchant3_feature.total_coupon.replace(np.nan,0) #fillna with 0
 merchant3_feature.to_csv('data/merchant3_feature.csv',index=None)
 
@@ -697,6 +710,7 @@ def get_user_date_datereceived_gap(s):
 #for dataset3
 user3 = feature3[['user_id','merchant_id','coupon_id','discount_rate','distance','date_received','date']]
 # 在 0315~0630 时间段有消费的(正常消费或者用券)或者在 0315~0630 时间段拿了券没有消费的 (选出满足这些条件的行，但是每行的index保持不变)
+# 求user的特征也要在更长的之前的时间段中去求
 
 t = user3[['user_id']]
 t.drop_duplicates(inplace=True)
@@ -706,6 +720,7 @@ t1.drop_duplicates(inplace=True)
 t1.merchant_id = 1
 t1 = t1.groupby('user_id').agg('sum').reset_index()
 t1.rename(columns={'merchant_id':'count_merchant'},inplace=True)
+# 每个人都拿到了几个优惠券。
 
 t2 = user3[(user3.date!='null')&(user3.coupon_id!='null')][['user_id','distance']]
 t2.replace('null',-1,inplace=True)
